@@ -1,0 +1,13 @@
+# Environment variables (set in Netlify, scoped to Functions/Runtime as well as Builds):
+#   DATABASE_URL, SITE_URL, WHATSAPP_NUMBER, RESEND_API_KEY, EMAIL_FROM, NOTIFY_EMAIL
+# Do NOT set NODE_ENV=production here: it skips devDependencies (prisma) and breaks the build.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
