@@ -115,6 +115,30 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
             <SequinWall />
           </div>
         </section>
+      ) : !section && !q ? (
+        // No published cover story yet: keep the front page dressed with the magazine's own pitch.
+        <section className="hero">
+          <div className="wrap">
+            <div>
+              <div className="eyebrow">Glitz &amp; Style Magazine</div>
+              <h1>
+                Where every entrance <em>makes the news</em>
+              </h1>
+              <p className="dek">
+                Weddings, galas, owambes and red carpets across Nigeria and beyond. Our cameras, your glamour, on the pages everyone reads.
+              </p>
+              <div className="hero-ctas">
+                <a className="btn btn-red" href="#book">
+                  Get your event covered
+                </a>
+                <a className="btn btn-ghost" href="#cover-maker">
+                  Be the cover
+                </a>
+              </div>
+            </div>
+            <SequinWall />
+          </div>
+        </section>
       ) : null}
 
       <section className="section" id="stories" style={{ paddingTop: section || q ? 48 : 24 }}>
@@ -152,7 +176,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           <div className="stories">
             {stories.length === 0 ? (
               <p className="empty">
-                {q ? <>No stories match &ldquo;{q}&rdquo;. Try &ldquo;wedding&rdquo;, &ldquo;gele&rdquo; or &ldquo;Abuja&rdquo;.</> : "No stories in this section yet."}
+                {q ? (
+                  <>No stories match &ldquo;{q}&rdquo;. Try &ldquo;wedding&rdquo;, &ldquo;gele&rdquo; or &ldquo;Abuja&rdquo;.</>
+                ) : section ? (
+                  "No stories in this section yet."
+                ) : (
+                  "The first stories of the season are on their way. Hosting something glamorous? Tell us below."
+                )}
               </p>
             ) : null}
             {stories.map((s, i) => (

@@ -123,6 +123,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; 
 /* hero */
 .hero .wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(24px, 5vw, 64px); align-items: center; padding-block: clamp(36px, 6vw, 72px); }
 .hero h1 { font-size: clamp(2.5rem, 6vw, 5.1rem); font-weight: 500; letter-spacing: -0.015em; margin-top: 14px; }
+.hero h1 em { font-style: italic; color: var(--crimson); font-weight: 600; }
 .hero h1 a { text-decoration: none; }
 .hero h1 a:hover { color: var(--crimson); }
 .hero .dek { font-size: 1.1rem; color: var(--muted); max-width: 46ch; margin: 20px 0 26px; }
