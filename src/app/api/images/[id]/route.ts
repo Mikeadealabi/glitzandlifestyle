@@ -9,6 +9,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       "content-type": img.mime,
       // Image rows are never edited in place (a new upload gets a new id), so cache hard.
       "cache-control": "public, max-age=31536000, immutable",
+      // Let Netlify's edge keep a copy too, so each photo is read from the database once, not per visitor.
+      "netlify-cdn-cache-control": "public, max-age=31536000, immutable, durable",
     },
   });
 }
