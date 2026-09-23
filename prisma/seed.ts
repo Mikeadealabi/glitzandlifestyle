@@ -2,6 +2,8 @@
 // so it refuses to run against anything but a local database unless forced.
 import { PrismaClient, type Section, type EventKind } from "@prisma/client";
 import { randomBytes, scryptSync } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const url = process.env.DATABASE_URL ?? "";
 if (!/localhost|127\.0\.0\.1/.test(url) && process.env.ALLOW_DESTRUCTIVE_SEED !== "1") {
@@ -14,6 +16,18 @@ const hash = (p: string) => {
   const salt = randomBytes(16).toString("hex");
   return `scrypt:${salt}:${scryptSync(p, salt, 64).toString("hex")}`;
 };
+// Photos from Unsplash (free licence), resized into prisma/seed-images.
+async function photo(file: string): Promise<string> {
+  const data = readFileSync(join(process.cwd(), "prisma", "seed-images", file));
+  // JPEG size lives in the SOF marker: baseline (FFC0) or progressive (FFC2).
+  let sof = data.indexOf(Buffer.from([0xff, 0xc0]));
+  if (sof < 0) sof = data.indexOf(Buffer.from([0xff, 0xc2]));
+  const height = sof >= 0 ? data.readUInt16BE(sof + 5) : 1400;
+  const width = sof >= 0 ? data.readUInt16BE(sof + 7) : 1400;
+  const img = await db.image.create({ data: { mime: "image/jpeg", data, width, height }, select: { id: true } });
+  return img.id;
+}
+
 const daysFromNow = (d: number, hour = 18) => {
   const t = new Date();
   t.setDate(t.getDate() + d);
@@ -21,10 +35,10 @@ const daysFromNow = (d: number, hour = 18) => {
   return t;
 };
 
-const stories: { title: string; slug: string; section: Section; dek: string; byline: string; featured?: boolean; ago: number; body: string }[] = [
+const stories: { title: string; slug: string; section: Section; dek: string; byline: string; featured?: boolean; ago: number; body: string; photo: string; credit: string }[] = [
   {
     title: "The night Lagos wore red, and 600 guests forgot their phones",
-    slug: "the-night-lagos-wore-red",
+    slug: "the-night-lagos-wore-red", photo: "lagos-wore-red.jpg", credit: "Dennis Irorere / Unsplash",
     section: "WEDDINGS",
     featured: true,
     ago: 1,
@@ -48,7 +62,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "The Silver Ball, Abuja: every look from the night",
-    slug: "silver-ball-abuja-every-look",
+    slug: "silver-ball-abuja-every-look", photo: "silver-ball.jpg", credit: "Filip Rankovic Grobgaard / Unsplash",
     section: "EVENTS",
     ago: 2,
     byline: "Hauwa Bello",
@@ -57,7 +71,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "How to style one aso-ebi three different ways",
-    slug: "style-one-aso-ebi-three-ways",
+    slug: "style-one-aso-ebi-three-ways", photo: "aso-ebi-three-ways.jpg", credit: "Ibrahima Toure / Unsplash",
     section: "STYLE",
     ago: 3,
     byline: "Chidinma Eze",
@@ -66,7 +80,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "Owambe make-up that survives a seven-hour party",
-    slug: "owambe-makeup-seven-hours",
+    slug: "owambe-makeup-seven-hours", photo: "owambe-makeup.jpg", credit: "Raissa for Good Faces Agency / Unsplash",
     section: "BEAUTY",
     ago: 4,
     byline: "Ifeoma Nwosu",
@@ -75,7 +89,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "Lagos rooftop dinners worth dressing up for",
-    slug: "lagos-rooftop-dinners",
+    slug: "lagos-rooftop-dinners", photo: "rooftop-dinners.jpg", credit: "Angelo Pantazis / Unsplash",
     section: "LIFESTYLE",
     ago: 5,
     byline: "Tolu Bankole",
@@ -84,7 +98,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "Seventy and fabulous: a Port Harcourt jubilee",
-    slug: "seventy-and-fabulous-port-harcourt",
+    slug: "seventy-and-fabulous-port-harcourt", photo: "seventy-and-fabulous.jpg", credit: "Tope A. Asokere / Unsplash",
     section: "EVENTS",
     ago: 6,
     byline: "Ebiere George",
@@ -93,7 +107,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "The rise of the second-outfit reveal",
-    slug: "rise-of-the-second-outfit-reveal",
+    slug: "rise-of-the-second-outfit-reveal", photo: "second-outfit.jpg", credit: "Oyemike Princewill / Unsplash",
     section: "WEDDINGS",
     ago: 8,
     byline: "Chidinma Eze",
@@ -102,7 +116,7 @@ At 10:40 the lights dropped, the band played the first bars of the couple's song
   },
   {
     title: "AMVCA after-party: the looks that owned the carpet",
-    slug: "amvca-after-party-looks",
+    slug: "amvca-after-party-looks", photo: "amvca-after-party.jpg", credit: "Anshuman Khadotkar / Unsplash",
     section: "RED_CARPET",
     ago: 2,
     byline: "Hauwa Bello",
@@ -121,16 +135,16 @@ const events: { title: string; city: string; venue: string; days: number; kind: 
 ];
 
 const looks = [
-  { name: "The Crimson Cape", description: "Tulle cape gown with a 3-metre train and crystal collar.", hits: 412, misses: 88 },
-  { name: "Champagne Agbada, Reimagined", description: "Silk agbada cut as a sleeveless column, gold cuffs.", hits: 260, misses: 171 },
-  { name: "Rose Sequin Tuxedo", description: "Double-breasted, hand-beaded lapels, no shirt.", hits: 198, misses: 203 },
+  { name: "The Coral Crown", description: "Beaded coral crown, collar and a cloud of white fur. Royalty, no apologies.", hits: 412, misses: 88, photo: "look-coral-crown.jpg" },
+  { name: "Midnight Gloves", description: "Black column gown, opera gloves and a sleek finger-wave bob.", hits: 260, misses: 171, photo: "look-midnight-gloves.jpg" },
+  { name: "The Rose Suit", description: "Hot-pink tailoring over a black roll-neck, finished with mirrored shades.", hits: 198, misses: 203, photo: "look-rose-suit.jpg" },
 ];
 
 async function main() {
   const email = (process.env.ADMIN_EMAIL ?? "admin@glitzandstyle.local").toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "GlitzAndStyle!2026";
 
-  await db.$transaction([db.story.deleteMany(), db.event.deleteMany(), db.look.deleteMany()]);
+  await db.$transaction([db.story.deleteMany(), db.event.deleteMany(), db.look.deleteMany(), db.image.deleteMany()]);
 
   const admin = await db.user.upsert({
     where: { email },
@@ -144,9 +158,9 @@ async function main() {
   });
 
   for (const s of stories) {
-    const { ago, ...data } = s;
+    const { ago, photo: file, credit, ...data } = s;
     await db.story.create({
-      data: { ...data, status: "PUBLISHED", publishedAt: daysFromNow(-ago, 9), authorId: admin.id },
+      data: { ...data, photoCredit: credit, coverImageId: await photo(file), status: "PUBLISHED", publishedAt: daysFromNow(-ago, 9), authorId: admin.id },
     });
   }
   await db.story.create({
@@ -157,6 +171,8 @@ async function main() {
       dek: "Street art, street style and a lot of glitter.",
       body: "Photos coming Monday.",
       byline: "Ama Mensah",
+      photoCredit: "Prince Akachi / Unsplash",
+      coverImageId: await photo("chale-wote.jpg"),
       status: "DRAFT",
       authorId: admin.id,
     },
@@ -165,7 +181,7 @@ async function main() {
     const { days, ...data } = e;
     await db.event.create({ data: { ...data, startsAt: daysFromNow(days) } });
   }
-  for (const [i, l] of looks.entries()) await db.look.create({ data: { ...l, position: i } });
+  for (const [i, { photo: file, ...l }] of looks.entries()) await db.look.create({ data: { ...l, position: i, coverImageId: await photo(file) } });
 
   console.log(`✓ Seeded ${stories.length + 1} stories, ${events.length} events, ${looks.length} looks`);
   console.log(`✓ Sign in at /admin/login as ${email} (password from ADMIN_PASSWORD, default in README)`);
